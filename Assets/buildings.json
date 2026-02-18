@@ -1,0 +1,9 @@
+[
+  {
+    "id": "smelter",
+    "name": "Smelter",
+    "abbreviation": "smt",
+    "timeToBuildSeconds": 10,
+    "storageSpaceProvided": 0
+  }
+]

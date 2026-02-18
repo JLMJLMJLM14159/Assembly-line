@@ -1,0 +1,13 @@
+[
+  {
+    "id": "smelt_iron",
+    "inputs": [
+      { "material": "iron_ore", "amount": 2 }
+    ],
+    "outputs": [
+      { "material": "iron", "amount": 1 }
+    ],
+    "building": "smelter",
+    "timeToCraftSeconds": 1
+  }
+]

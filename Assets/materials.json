@@ -1,0 +1,20 @@
+[
+  {
+    "id": "oxygen",
+    "name": "Oxygen",
+    "abbreviation": "o",
+    "description": "Required for human life."
+  },
+  {
+    "id": "iron_ore",
+    "name": "Iron Ore",
+    "abbreviation": "feo",
+    "description": "Unsmelted iron ore."
+  },
+  {
+    "id": "iron",
+    "name": "Iron",
+    "abbreviation": "fe",
+    "description": "A useful element."
+  }
+]

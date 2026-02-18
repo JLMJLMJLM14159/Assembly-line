@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace Assembly_line
 {
@@ -6,109 +8,121 @@ namespace Assembly_line
     {
         public static void Main()
         {
-            
+        }
+    }
+
+    public struct Base
+    {
+        public List<Building> Buildings { get; set; }
+        public BaseCraftingQueue BaseCraftingQueue { get; set; }
+    }
+
+    public struct BaseCraftingQueue()
+    {
+        public List<Craft> CraftsQueue { get; private set; } = [];
+        public Stopwatch CraftingProgress { get; private set; } = new();
+        public TimeSpan? WhenCraftingIsDone { get; private set; }
+
+        public void AddToQueue(Craft craftToAdd)
+        {
+            CraftsQueue.Add(craftToAdd);
+            WhenCraftingIsDone = craftToAdd.TimeToCraft;
+            CraftingProgress.Start();
+        }
+
+        public void TryFinishCurrentCraft()
+        {
+            int amICooked = 
+                Convert.ToInt32(CraftsQueue.Count > 0) + 
+                Convert.ToInt32(CraftingProgress != null) + 
+                Convert.ToInt32(WhenCraftingIsDone != null)
+            ;
+            if (amICooked == 3 && CraftingProgress!.Elapsed >= WhenCraftingIsDone)
+            {
+                CraftingProgress.Stop();
+                CraftingProgress.Reset();
+                CraftsQueue.RemoveAt(0);
+
+                if (CraftsQueue.Count > 0)
+                {
+                    WhenCraftingIsDone = CraftsQueue[0].TimeToCraft;
+                    CraftingProgress.Start();
+                }
+            }
+            else if (amICooked > 0) { throw new("Ok something's gone really wrong with the crafting stopwatch. DEBUG NOW"); }
+        }
+    }
+
+    [method: Newtonsoft.Json.JsonConstructor]
+    public readonly struct Material(string id, string name, string abbreviation, string description)
+    {
+        public readonly string Id = id;
+        public readonly string Name = name;
+        public readonly string Abbreviation = abbreviation;
+        public readonly string Description = description;
+        private static Dictionary<string, Material> All = [];
+
+        public static Material FromId(string id) => All[id];
+
+        public static bool operator ==(Material a, Material b) => a.Id == b.Id;
+        public static bool operator !=(Material a, Material b) => !(a == b);
+        public override readonly bool Equals(object? obj) => obj is Material other && this == other;
+        public override readonly int GetHashCode() => Id.GetHashCode();
+
+        public static void Load()
+        {
+            string file = File.ReadAllText("materials.json");
+            List<Material> list = JsonConvert.DeserializeObject<List<Material>>(file) ?? throw new JsonException();
+            All = list.ToDictionary(m => m.Id);
         }
     }
     
-    public readonly struct Material
+    [method: Newtonsoft.Json.JsonConstructor]
+    public readonly struct Building(string id, string name, string abbr, TimeSpan timeToBuild, int storage)
     {
-        public readonly string Name;
-        public readonly string Abbreviation;
-        public readonly string Description;
+        public readonly string Id = id;
+        public readonly string Name = name;
+        public readonly string Abbreviation = abbr;
+        public readonly TimeSpan TimeToBuild = timeToBuild;
+        public readonly int StorageSpaceProvided = storage;
+        private static Dictionary<string, Building> All = [];
 
-        private Material(string name, string abbreviation, string description)
+        public static Building FromId(string id) => All[id];
+
+        public static bool operator ==(Building a, Building b) => a.Id == b.Id;
+        public static bool operator !=(Building a, Building b) => !(a == b);
+        public override bool Equals(object? obj) => obj is Building other && this == other;
+        public override int GetHashCode() => Id.GetHashCode();
+
+        public static void Load()
         {
-            Name = name;
-            Abbreviation = abbreviation;
-            Description = description;
-        }
-
-        public static readonly List<Material> Materials = [
-            new("oxygen", "o", "Required for human life. Without this, your crew will lose all working efficiency."),
-            new("iron ore", "feo", "Unsmelted iron ore, straight from the ground."),
-            new("iron", "fe", "A useful element that can be made into structural elements.")
-        ];
-
-        public static Material FindMaterialFromName(string name)
-        {
-            name = name.ToLower();
-
-            List<Material> foundMaterials = [.. Materials.Where(m => { return name == m.Name; })];
-            
-            if (foundMaterials.Count != 1) { throw new($"Found multiple or no materials from material list with name {name}."); }
-
-            return foundMaterials[0];
-        }
-
-        public static Material FindMaterialFromAbbreviation(string abbreviation)
-        {
-            abbreviation = abbreviation.ToLower();
-
-            List<Material> foundMaterials = [.. Materials.Where(m => { return abbreviation == m.Abbreviation; })];
-            
-            if (foundMaterials.Count != 1) { throw new($"Found multiple or no materials from material list with name {abbreviation}."); }
-
-            return foundMaterials[0];
+            string file = File.ReadAllText("buildings.json");
+            List<Building> list = JsonConvert.DeserializeObject<List<Building>>(file) ?? throw new JsonException();
+            All = list.ToDictionary(m => m.Id);
         }
     }
 
-    public readonly struct Craft
+    [method: Newtonsoft.Json.JsonConstructor]
+    public readonly struct Craft(string id, List<(Material, int)> inputs, List<(Material, int)> outputs, Building place, TimeSpan time)
     {
-        public readonly List<(Material, int)> Inputs;
-        public readonly List<(Material, int)> Outputs;
-        public readonly Building PlaceToCraft;
-        public readonly TimeSpan TimeToCraft;
+        public readonly string Id = id;
+        public readonly List<(Material, int)> Inputs = inputs;
+        public readonly List<(Material, int)> Outputs = outputs;
+        public readonly Building PlaceToCraft = place;
+        public readonly TimeSpan TimeToCraft = time;
+        private static Dictionary<string, Craft> All = [];
+        public static Craft FromId(string id) => All[id];
 
-        private Craft(List<(Material, int)> inputs, List<(Material, int)> outputs, Building placeToCraft, TimeSpan timeToCraft)
+        public static bool operator ==(Craft a, Craft b) => a.Id == b.Id;
+        public static bool operator !=(Craft a, Craft b) => !(a == b);
+        public override bool Equals(object? obj) => obj is Craft other && this == other;
+        public override int GetHashCode() => Id.GetHashCode();
+
+        public static void Load()
         {
-            Inputs = inputs;
-            Outputs = outputs;
-            PlaceToCraft = placeToCraft;
-            TimeToCraft = timeToCraft;
-        }
-
-        public static readonly List<Craft> Crafts = [
-            new([(Material.FindMaterialFromName("iron ore"), 2)], [(Material.FindMaterialFromName("iron"), 1)], Building.FindBuildingFromName("smelter"), new(0, 0, 1))
-        ];
-    }
-
-    public readonly struct Building
-    {
-        public readonly string Name;
-        public readonly string Abbreviation;
-        public readonly TimeSpan TimeToBuild;
-
-        private Building(string name, string abbreviation, TimeSpan timeToBuild)
-        {
-            Name = name;
-            Abbreviation = abbreviation;
-            TimeToBuild = timeToBuild;
-        }
-
-        public static readonly List<Building> Buildings = [
-            new("smelter", "smt", new(0, 0, 10))
-        ];
-
-        public static Building FindBuildingFromName(string name)
-        {
-            name = name.ToLower();
-
-            List<Building> foundBuildings = [.. Buildings.Where(b => { return name == b.Name; })];
-            
-            if (foundBuildings.Count != 1) { throw new($"Found multiple or no materials from building list with name {name}."); }
-
-            return foundBuildings[0];
-        }
-
-        public static Building FindBuildingFromAbbreviation(string abbreviation)
-        {
-            abbreviation = abbreviation.ToLower();
-
-            List<Building> foundMaterials = [.. Buildings.Where(m => { return abbreviation == m.Abbreviation; })];
-            
-            if (foundMaterials.Count != 1) { throw new($"Found multiple or no buildings from material list with name {abbreviation}."); }
-
-            return foundMaterials[0];
+            string file = File.ReadAllText("crafts.json");
+            List<Craft> list = JsonConvert.DeserializeObject<List<Craft>>(file) ?? throw new JsonException();
+            All = list.ToDictionary(m => m.Id);
         }
     }
 }
