@@ -3,18 +3,18 @@
     "id": "oxygen",
     "name": "Oxygen",
     "abbreviation": "o",
-    "description": "Required for human life."
+    "description": "Required for human life. Without this, production will completely stop."
   },
   {
     "id": "iron_ore",
     "name": "Iron Ore",
     "abbreviation": "feo",
-    "description": "Unsmelted iron ore."
+    "description": "Unsmelted iron ore, straight from the ground."
   },
   {
     "id": "iron",
     "name": "Iron",
     "abbreviation": "fe",
-    "description": "A useful element."
+    "description": "A useful element, used for construction."
   }
 ]
